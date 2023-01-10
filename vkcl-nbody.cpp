@@ -812,17 +812,25 @@ int main() {
 
 	ubo->particle_count = num_particles;
 
-	printf("Enter quit to end the program.\n");
+	printf("Enter quit to end the program or set the env var VKCL_STOP_STEP to stop at a certain step.\n");
 
 	std::chrono::high_resolution_clock::time_point start_time, end_time;
 	StdinMailbox mailbox;
 	std::string line;
 	float duration = 0.f, mean_sample = 0.f;
 	int num_samples = 0;
+	int global_step = 0;
 
 	while (true) {
 		if (mailbox.get_input(line)) {
 			if (line == "quit")
+				break;
+		}
+
+		// if the env var is set, stop at the specified step
+		if (std::getenv("VKCL_STOP_STEP")) {
+			const int stop_index = std::atoi(std::getenv("VKCL_STOP_STEP"));
+			if (global_step == stop_index)
 				break;
 		}
 
@@ -859,8 +867,9 @@ int main() {
 			const float avg_dt = mean_sample/num_samples, avg_bps = 1.f/avg_dt;
 			mean_sample = 0.f;
 			num_samples = 0;
+			global_step++;
 
-			std::printf("DateTime:%d-%02d-%02d %02d:%02d:%02d AverageBodiesPerSecond (AverageBPS):%.02f\n", 1900 + timest->tm_year, 1 + timest->tm_mon, timest->tm_mday, timest->tm_hour, timest->tm_min, timest->tm_sec, avg_bps);
+			std::printf("Step:%d DateTime:%d-%02d-%02d %02d:%02d:%02d AverageBodiesPerSecond (AverageBPS):%.02f\n", global_step, 1900 + timest->tm_year, 1 + timest->tm_mon, timest->tm_mday, timest->tm_hour, timest->tm_min, timest->tm_sec, avg_bps);
 		}
 
 		if (funcs.vkResetFences(dev, 1, &fence) != VK_SUCCESS)
