@@ -185,6 +185,17 @@ static int select_device_prompt(const std::vector<VkPhysicalDevice> &physical_de
 
 	int idx = -1;
 	while (idx < 0 || idx >= num_physical_devs) {
+		// if the VKCL_DEVICE_INDEX environment variable is set, use that instead of prompting the user
+		const char *env_device_index = std::getenv("VKCL_DEVICE_INDEX");
+		if (env_device_index) {
+			idx = std::atoi(env_device_index);
+			if (idx < 0 || idx >= num_physical_devs) {
+				std::fprintf(stderr, "Invalid device index %d specified in VKCL_DEVICE_INDEX environment variable\n", idx);
+				std::exit(1);
+			}
+			break;
+		}
+		
 		print_physical_devices(physical_dev_names, on_pci, pci_bus_infos, vec_props);
 		std::cin >> idx;
 		std::printf("\n");
